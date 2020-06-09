@@ -46,3 +46,9 @@ State flow:
 		6||. enact selected card & call president power		->
 	7. ResetRound -> PresidentNaturalAdvance
 				
+Powers Flow:
+	Investigate: Reveals party membership (player can only be investigated once)
+	Nominate: The current president chooses another player (term limits do not apply) to become president, normal voting for chanc. happens. 
+			  After round the presidency returns to the left (count down) of the president who enacted the special election
+	Peek: President looks at the top three policies and returns them to the top
+	Kill: Removes player from game. If the killed player is Hitler -> Liberals win
