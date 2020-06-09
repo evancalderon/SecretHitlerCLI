@@ -19,6 +19,10 @@ namespace Packets
 		ChancellorPick,
 		CardPick,
 		Veto,
+		Investigate,
+		Nominate,
+		Kill,
+		Claim,
 	};
 
 	template<ClientPacketKind K, typename T>
@@ -34,7 +38,7 @@ namespace Packets
 
 	struct ClientJoinContent
 	{
-		unsigned nameLen;
+		char nameLen;
 		char name[32];
 	};
 
@@ -63,6 +67,27 @@ namespace Packets
 		bool state;
 	};
 
+	struct ClientInvestigateContent
+	{
+		char chair;
+	};
+
+	struct ClientNominateContent
+	{
+		char chair;
+	};
+
+	struct ClientKillContent
+	{
+		char chair;
+	};
+
+	struct ClientClaimContent
+	{
+		char nCards;
+		Policy cards[3];
+	};
+
 	typedef ClientPacket<ClientPacketKind::None, NoneContent>
 		ClientNonePacket;
 	typedef ClientPacket<ClientPacketKind::Join, ClientJoinContent>
@@ -77,6 +102,14 @@ namespace Packets
 		ClientCardPickPacket;
 	typedef ClientPacket<ClientPacketKind::Veto, ClientVetoContent>
 		ClientVetoPacket;
+	typedef ClientPacket<ClientPacketKind::Investigate, ClientInvestigateContent>
+		ClientInvestigatePacket;
+	typedef ClientPacket<ClientPacketKind::Nominate, ClientNominateContent>
+		ClientNominatePacket;
+	typedef ClientPacket<ClientPacketKind::Claim, ClientClaimContent>
+		ClientClaimPacket;
+	typedef ClientPacket<ClientPacketKind::Kill, ClientKillContent>
+		ClientKillPacket;
 
 	#pragma endregion
 
@@ -96,7 +129,12 @@ namespace Packets
 		CardPlayed,
 		AnnounceWin,
 		PeekedCards,
-		Investigation,
+		InvestigationRequest,
+		InvestigationReport,
+		NominateRequest,
+		KillRequest,
+		Claim,
+		InformDeath,
 	};
 
 	template<ServerPacketKind K, class T>
@@ -137,7 +175,7 @@ namespace Packets
 
 	struct ServerCardListContent
 	{
-		int nCards;
+		char nCards;
 		Policy cards[3];
 	};
 
@@ -164,9 +202,34 @@ namespace Packets
 		Policy cards[3];
 	};
 
-	struct ServerInvestigationContent
+	struct ServerInvestigationRequestContent
 	{
-		Policy affiliation;
+	};
+
+	struct ServerInvestigationReportContent
+	{
+		char chair;
+		bool isFascist;
+	};
+
+	struct ServerNominateRequestContent
+	{
+	};
+
+	struct ServerKillRequestContent
+	{
+	};
+
+	struct ServerClaimContent
+	{
+		char chair;
+		char nCards;
+		Policy cards[3];
+	};
+
+	struct ServerInformDeathContent
+	{
+		char chair;
 	};
 
 	typedef ServerPacket<ServerPacketKind::None, NoneContent>
@@ -193,8 +256,18 @@ namespace Packets
 		ServerAnnounceWinPacket;
 	typedef ServerPacket<ServerPacketKind::PeekedCards, ServerPeekedCardsContent>
 		ServerPeekedCardsPacket;
-	typedef ServerPacket<ServerPacketKind::Investigation, ServerInvestigationContent>
-		ServerInvestigationPacket;
+	typedef ServerPacket<ServerPacketKind::InvestigationRequest, ServerInvestigationRequestContent>
+		ServerInvestigationRequestPacket;
+	typedef ServerPacket<ServerPacketKind::InvestigationReport, ServerInvestigationReportContent>
+		ServerInvestigationReportPacket;
+	typedef ServerPacket<ServerPacketKind::NominateRequest, ServerNominateRequestContent>
+		ServerNominateRequestPacket;
+	typedef ServerPacket<ServerPacketKind::KillRequest, ServerKillRequestContent>
+		ServerKillRequestPacket;
+	typedef ServerPacket<ServerPacketKind::Claim, ServerClaimContent>
+		ServerClaimPacket;
+	typedef ServerPacket<ServerPacketKind::InformDeath, ServerInformDeathContent>
+		ServerInformDeathPacket;
 	
 	#pragma endregion
 

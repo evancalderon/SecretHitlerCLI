@@ -51,6 +51,8 @@ void Server::loop()
 	u_long enabled = 1;
 	ioctlsocket(sock, FIONBIO, &enabled);
 
+
+
 	std::vector<Policy> selectionCards;
 	std::map<char, bool> electionVotes;
 	int electionChaos;
@@ -78,6 +80,24 @@ void Server::loop()
 			if (e != WSAEWOULDBLOCK)
 			{
 				std::cout << "Receive failed: " << e << std::endl;
+			}
+		}
+
+		if (hasMessage && message->kind == ClientPacketKind::Claim)
+		{
+			auto pc = player->pData.chair;
+			if (pc == presidentChair || pc == lastPresidentChair ||
+				pc == chancellorChair || pc == lastChancellorChair)
+			{
+				auto data = (ClientClaimContent*) &message->content;
+				ServerClaimContent claim;
+				claim.chair = player->pData.chair;
+				claim.nCards = data->nCards;
+				for (int i = 0; i < 3; i++)
+				{
+					claim.cards[i] = data->cards[i];
+				}
+				bounce(sock, ServerClaimContent(claim));
 			}
 		}
 
@@ -342,10 +362,18 @@ void Server::loop()
 						state = SState::PresidentPeek;
 						break;
 					case 2:
+						send(sock, players[presidentChair], ServerInvestigationRequestPacket());
 						state = SState::PresidentInvestigate;
 						break;
 					case 3:
+						send(sock, players[presidentChair], ServerNominateRequestPacket());
 						state = SState::PresidentNominate;
+						break;
+					case 4:
+					case 5:
+						send(sock, players[presidentChair], ServerKillRequestPacket());
+						state = SState::PresidentKill;
+						break;
 					}
 				}
 
@@ -364,8 +392,30 @@ void Server::loop()
 			state = SState::PresidentNaturalAdvance;
 			break;
 		case SState::PresidentInvestigate:
+			if (hasMessage && message->kind == ClientPacketKind::Investigate)
+			{
+				auto data = (ClientInvestigateContent*) &message->content;
+				send(sock, players[presidentChair],
+					ServerInvestigationReportPacket({
+						data->chair, players[data->chair].data.isFascist }));
+			}
 			break;
 		case SState::PresidentNominate:
+			if (hasMessage && message->kind == ClientPacketKind::Nominate)
+			{
+				auto data = (ClientNominateContent*) &message->content;
+				presidentChair = data->chair;
+				bounce(sock, ServerNewPresidentPacket({ presidentChair }));
+				state = SState::PresidentCardSelect;
+			}
+			break;
+		case SState::PresidentKill:
+			if (hasMessage && message->kind == ClientPacketKind::Kill)
+			{
+				auto data = (ClientKillContent*) &message->content;
+				players[data->chair].alive = false;
+				bounce(sock, ServerInformDeathPacket({ data->chair }));
+			}
 			break;
 		case SState::Win:
 			{
