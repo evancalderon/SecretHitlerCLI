@@ -94,6 +94,7 @@ namespace Packets
 		VetoRequest,
 		ForcePlayRequest,
 		CardPlayed,
+		SendWin,
 	};
 
 	template<ServerPacketKind K, class T>
@@ -151,6 +152,11 @@ namespace Packets
 		Policy cardPlayed;
 	};
 
+	struct ServerSendWinContent
+	{
+		Policy winningSide;
+	};
+
 	typedef ServerPacket<ServerPacketKind::None, NoneContent>
 		ServerNonePacket;
 	typedef ServerPacket<ServerPacketKind::PlayerData, ServerPlayerDataContent>
@@ -171,6 +177,8 @@ namespace Packets
 		ServerForcePlayRequestPacket;
 	typedef ServerPacket<ServerPacketKind::CardPlayed, ServerCardPlayedContent>
 		ServerCardPlayedPacket;
+	typedef ServerPacket<ServerPacketKind::SendWin, ServerSendWinContent>
+		ServerSendWinPacket;
 	
 	#pragma endregion
 
