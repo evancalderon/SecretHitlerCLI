@@ -28,7 +28,7 @@ enum class SState
 	Win,
 };
 
-class ServerState : public CommandListener
+class Server : public CommandListener
 {
 	SState state = SState::Lobby;
 
@@ -45,10 +45,10 @@ class ServerState : public CommandListener
 	char lastPresidentChair;
 	char lastChancellorChair;
 
-	std::vector<Client> players;
+	std::vector<Player> players;
 
 public:
-	void addPlayer(Client);
+	void addPlayer(Player);
 	void loop();
 
 	std::optional<Policy> checkWin();

@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 	std::unique_ptr<CommandListener> listener;
 	if (i[0] == 's')
 	{
-		listener = std::make_unique<ServerState>();
+		listener = std::make_unique<Server>();
 	}
 	else
 	{

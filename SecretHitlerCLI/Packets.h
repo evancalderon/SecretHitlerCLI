@@ -50,7 +50,7 @@ namespace Packets
 
 	struct ClientChancellorPickContent
 	{
-		char chancellor;
+		char chancellorChair;
 	};
 
 	struct ClientCardPickContent
@@ -94,7 +94,9 @@ namespace Packets
 		VetoRequest,
 		ForcePlayRequest,
 		CardPlayed,
-		SendWin,
+		AnnounceWin,
+		PeekedCards,
+		Investigation,
 	};
 
 	template<ServerPacketKind K, class T>
@@ -152,9 +154,19 @@ namespace Packets
 		Policy cardPlayed;
 	};
 
-	struct ServerSendWinContent
+	struct ServerAnnounceWinContent
 	{
 		Policy winningSide;
+	};
+
+	struct ServerPeekedCardsContent
+	{
+		Policy cards[3];
+	};
+
+	struct ServerInvestigationContent
+	{
+		Policy affiliation;
 	};
 
 	typedef ServerPacket<ServerPacketKind::None, NoneContent>
@@ -177,8 +189,12 @@ namespace Packets
 		ServerForcePlayRequestPacket;
 	typedef ServerPacket<ServerPacketKind::CardPlayed, ServerCardPlayedContent>
 		ServerCardPlayedPacket;
-	typedef ServerPacket<ServerPacketKind::SendWin, ServerSendWinContent>
-		ServerSendWinPacket;
+	typedef ServerPacket<ServerPacketKind::AnnounceWin, ServerAnnounceWinContent>
+		ServerAnnounceWinPacket;
+	typedef ServerPacket<ServerPacketKind::PeekedCards, ServerPeekedCardsContent>
+		ServerPeekedCardsPacket;
+	typedef ServerPacket<ServerPacketKind::Investigation, ServerInvestigationContent>
+		ServerInvestigationPacket;
 	
 	#pragma endregion
 

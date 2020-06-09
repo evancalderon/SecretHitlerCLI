@@ -14,12 +14,12 @@ template<typename T>
 void shuffle(std::vector<T> v);
 
 template<typename T>
-void send(SOCKET sock, Client client, T packet);
+void send(SOCKET sock, Player client, T packet);
 
 template<typename T>
 void bounce(SOCKET sock, T packet);
 
-sockaddr_in Client::addr()
+sockaddr_in Player::addr()
 {
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
@@ -28,7 +28,7 @@ sockaddr_in Client::addr()
 	return addr;
 }
 
-void ServerState::loop()
+void Server::loop()
 {
 	using namespace Packets;
 
@@ -67,7 +67,7 @@ void ServerState::loop()
 		auto player =
 			std::find_if(
 				players.begin(), players.end(),
-				[&ep](Client c) { return c.endpoint.combo == ep.combo; });
+				[&ep](Player c) { return c.endpoint.combo == ep.combo; });
 
 		auto message = (ClientNonePacket*) buffer;
 
@@ -81,7 +81,7 @@ void ServerState::loop()
 			}
 		}
 
-		static std::vector<Client> alivePlayers;
+		static std::vector<Player> alivePlayers;
 		switch (state)
 		{
 		case SState::Lobby:
@@ -92,7 +92,7 @@ void ServerState::loop()
 				case ClientPacketKind::Join:
 					{
 						auto data = (ClientJoinContent*) &message->content;
-						Client c;
+						Player c;
 						c.endpoint = ep;
 						c.pData.len = data->nameLen;
 						for (int i = 0; i < data->nameLen; i++)
@@ -154,11 +154,21 @@ void ServerState::loop()
 			}
 			bounce(sock, ServerPlayerListPacket(content));
 
+			switch (alivePlayers.size())
+			{
+			case 6:
+			case 8:
+			case 10:
+				fascistCards++;
+			}
+
 			alivePlayers = players;
 
 			electionChaos = 0;
 
-			state = SState::PresidentChancellorSelection; //Skip the president selection because the president has automatically been selected at the start of the game
+			//Skip the president selection because the president has
+			// automatically been selected at the start of the game
+			state = SState::PresidentChancellorSelection;
 			break;
 		case SState::PresidentNaturalAdvance:
 			lastPresidentChair = presidentChair;
@@ -176,12 +186,12 @@ void ServerState::loop()
 			{
 				auto data = (ClientChancellorPickContent*) &message->content;
 				if (player->pData.chair == presidentChair)
-				if (data->chancellor != player->pData.chair)
-				if (data->chancellor != lastChancellorChair)
+				if (data->chancellorChair != player->pData.chair)
+				if (data->chancellorChair != lastChancellorChair)
 				{
-					if (alivePlayers.size() > 5 || data->chancellor != lastPresidentChair)
+					if (alivePlayers.size() > 5 || data->chancellorChair != lastPresidentChair)
 					{
-						chancellorChair = data->chancellor;
+						chancellorChair = data->chancellorChair;
 						state = SState::Election;
 
 						bounce(sock, ServerElectionRequestPacket({ chancellorChair }));
@@ -261,7 +271,7 @@ void ServerState::loop()
 				{
 				case ClientPacketKind::CardPick:
 					{
-						auto data = (ClientCardPickContent*)&message->content;
+						auto data = (ClientCardPickContent*) &message->content;
 						selectionCards.erase(selectionCards.begin() + data->card);
 						state = SState::PlayCard;
 					}
@@ -291,6 +301,7 @@ void ServerState::loop()
 					}
 					else
 					{
+						bounce(sock, ServerElectionChaosPacket());
 						state = SState::PresidentNaturalAdvance;
 					}
 				}
@@ -307,33 +318,64 @@ void ServerState::loop()
 			break;
 		case SState::PlayCard:
 			{
-				bounce(sock, ServerCardPlayedContent({ selectionCards[0] })); //Sends info to clients
+				//Sends which card was played to clients
+				bounce(sock, ServerCardPlayedContent({ selectionCards[0] }));
 
 				if (selectionCards[0] == Policy::Fascist)
 					fascistCards++;
 				else
 					liberalCards++;
 
-				auto result = checkWin();
-				try {
-					policySideWin = result.value(); //Assign the value of the winning party to variable for the Win state
+				auto win = checkWin();
+				if (win)
+				{
+					//Assign the value of the winning party to variable for the Win state
+					policySideWin = win.value();
 					state = SState::Win;
 					// TODO: Create Win state
 				}
-				catch (std::exception& e) { //Returned std::nullopt, no one won or lost check go to powers
-					// TODO: Check & enact presidential powers that are available
+				else
+				{
+					switch (fascistCards)
+					{
+					case 1:
+						state = SState::PresidentPeek;
+						break;
+					case 2:
+						state = SState::PresidentInvestigate;
+						break;
+					case 3:
+						state = SState::PresidentNominate;
+					}
 				}
+
+				selectionCards.clear();
 			}
+			break;
+		case SState::PresidentPeek:
+			{
+				ServerPeekedCardsPacket msg;
+				for (int i = 0; i < 3; i++)
+				{
+					msg.content.cards[i] = cards[i];
+				}
+				send(sock, players[presidentChair], msg);
+			}
+			state = SState::PresidentNaturalAdvance;
+			break;
+		case SState::PresidentInvestigate:
+			break;
+		case SState::PresidentNominate:
 			break;
 		case SState::Win:
 			{
-				bounce(sock, ServerSendWinContent({ policySideWin }));
+				bounce(sock, ServerAnnounceWinContent({ policySideWin }));
 
 				if (policySideWin == Policy::Fascist)
-					std::cout << "Fascists ";
+					std::cout << "Fascists";
 				else
 					std::cout << "Liberals";
-				std::cout << "Win!";
+				std::cout << " Win!" << std::endl;
 
 				return;
 			}
@@ -341,7 +383,7 @@ void ServerState::loop()
 	}
 }
 
-void ServerState::addPlayer(Client ce)
+void Server::addPlayer(Player ce)
 {
 	if (players.size() == 10)
 	{
@@ -351,7 +393,7 @@ void ServerState::addPlayer(Client ce)
 	players.push_back(ce);
 }
 
-std::optional<Policy> ServerState::checkWin()
+std::optional<Policy> Server::checkWin()
 {
 	if (fascistCards >= 3 && players[chancellorChair].data.isHitler || fascistCards == 6)
 		return std::make_optional(Policy::Fascist);
@@ -377,7 +419,7 @@ void shuffle(std::vector<T> v)
 }
 
 template<typename T>
-void send(SOCKET sock, Client client, T packet)
+void send(SOCKET sock, Player client, T packet)
 {
 	sockaddr_in addr = client.addr();
 	int addrLen = sizeof(addr);

@@ -31,7 +31,7 @@ union Endpoint
 	unsigned long combo;
 };
 
-struct Client
+struct Player
 {
 	Endpoint endpoint;
 	ClientData data;
