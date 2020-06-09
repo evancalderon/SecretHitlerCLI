@@ -37,6 +37,7 @@ class ServerState : public CommandListener
 	int liberalCards = 0;
 	int fascistCards = 0;
 	int electionTracker = 0;
+	Policy policySideWin; //The policy side that wins the game
 
 	char presidentChair;
 	char chancellorChair;

@@ -304,6 +304,23 @@ void ServerState::loop()
 			state = SState::PlayCard;
 			break;
 		case SState::PlayCard:
+			bounce(sock, ServerCardPlayedContent({ selectionCards[0] })); //Sends info to clients
+
+			if (selectionCards[0] == Policy::Fascist)
+				fascistCards++;
+			else
+				liberalCards++;
+
+			auto result = checkWin();
+			try {
+				policySideWin = result.value(); //Assign the value of the winning party to variable for the Win state
+				state = SState::Win;
+				// TODO: Create Win state
+			}
+			catch (std::exception& e) { //Returned std::nullopt, no one won or lost check go to powers
+				// TODO: Check & enact presidential powers that are available
+			}
+			
 			break;
 		}
 	}

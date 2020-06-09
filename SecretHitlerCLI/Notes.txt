@@ -42,8 +42,9 @@ State flow:
 /		b. reset flag (=false)
 /	4. PresidentCardSelect ->
 /	5. ChancellorCardSelect ->
-/		a||. ChancellorVeto									->
-		6||. enact selected card & call president power		->
+/		a||. ChancellorVeto				->
+/		6||. enact selected card 
+		     & call president power		->
 	7. ResetRound -> PresidentNaturalAdvance
 				
 Powers Flow:
