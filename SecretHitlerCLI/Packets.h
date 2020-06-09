@@ -178,7 +178,7 @@ namespace Packets
 	typedef ServerPacket<ServerPacketKind::CardPlayed, ServerCardPlayedContent>
 		ServerCardPlayedPacket;
 	typedef ServerPacket<ServerPacketKind::SendWin, ServerSendWinContent>
-		ServerSendWinContent;
+		ServerSendWinPacket;
 	
 	#pragma endregion
 
