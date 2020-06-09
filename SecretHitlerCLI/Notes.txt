@@ -1,0 +1,48 @@
+﻿FP = fascist policies
+LP = liberal policies
+EP = enacted policy
+ET = election tracker
+
+Round procedure:
+	1. Pass Presidential candidacy: President placard moves clockwise (counts down)
+	2. Nominate Chancellor: 
+		a. President chooses chanc.
+		b. If proposed chanc. was president or chanc. LAST ROUND -> Cannot be choosen
+		c. If =5 people in game -> president may be chosen as chancellor
+
+	3. Vote: every player must vote Y/N
+		a. If majority YES -> both change roles. ET =0
+			1. If enacted FP >3 -> Fascists WIN
+
+		b. If [tie || majority NO] -> Vote fails. President placard moves clockwise (count down). ET++
+
+		c. If ET =3 (chaos) -> policy on top deck is used (presidential power [assasination] is not used). Term limits reset. ET resets (=0)
+			1. If policy deck count <3 -> shuffle both discard and remaining deck
+
+	4. President draws 3 policies, discards 1
+
+	5. [ Chancellor selects policy from undiscarded policies -> last policy discarded ] or enacts VETO
+		a. If >3 policies in deck -> shuffle & add discard deck to policy deck
+		b. If EP has no special powers -> new round
+		c. Veto is enacted?
+			1. President selects whether or not to agree
+				Agree? ET++, reset round
+				Disagree? Chancellor forced to select a card
+
+	6. Presidential powers: investigate, nominate, peek, kill
+	7. Reset round
+
+State flow:
+	0. GameStart -> PresidentChancellorSelection -> ... -> Round reset
+
+	1. PresidentNaturalAdvance ->
+	2. PresidentChancellorSelection ->
+	3. BOOLEAN (server loop, waitingForVote) = true ->
+		a. get votes
+		b. reset flag (=false)
+	4. PresidentCardSelect ->
+	5. ChancellorCardSelect ->
+		a||. ChancellorVeto									->
+		6||. enact selected card & call president power		->
+	7. ResetRound -> PresidentNaturalAdvance
+				
