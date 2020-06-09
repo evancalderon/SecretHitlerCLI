@@ -7,6 +7,12 @@
 
 enum class CState
 {
+	Join,
+	Ready,
+	ElectionVote,
+	ChancellorPick,
+	CardPick,
+	Veto
 };
 
 class ClientState : public CommandListener

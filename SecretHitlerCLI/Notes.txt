@@ -33,16 +33,16 @@ Round procedure:
 	7. Reset round
 
 State flow:
-	0. GameStart -> PresidentChancellorSelection -> ... -> Round reset
+/	0. GameStart -> PresidentChancellorSelection -> ... -> Round reset
 
-	1. PresidentNaturalAdvance ->
-	2. PresidentChancellorSelection ->
-	3. BOOLEAN (server loop, waitingForVote) = true ->
-		a. get votes
-		b. reset flag (=false)
-	4. PresidentCardSelect ->
-	5. ChancellorCardSelect ->
-		a||. ChancellorVeto									->
+/	1. PresidentNaturalAdvance ->
+/	2. PresidentChancellorSelection ->
+/	3. BOOLEAN (server loop, waitingForVote) = true ->
+/		a. get votes
+/		b. reset flag (=false)
+/	4. PresidentCardSelect ->
+/	5. ChancellorCardSelect ->
+/		a||. ChancellorVeto									->
 		6||. enact selected card & call president power		->
 	7. ResetRound -> PresidentNaturalAdvance
 				
