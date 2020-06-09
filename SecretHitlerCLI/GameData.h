@@ -8,14 +8,6 @@ enum class Policy
 	Liberal,
 };
 
-enum class PresidentialPower
-{
-	Investigate,
-	Nominate,
-	PeekCard,
-	KillPlayer
-};
-
 struct PlayerData
 {
 	char len;
