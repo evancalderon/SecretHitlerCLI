@@ -6,7 +6,8 @@
 
 class CommandListener
 {
-	ThreadedQueue<std::string> q;
+protected:
+	ThreadedQueue<std::string> queue;
 public:
 	void submit(std::string msg);
 	virtual void loop();

@@ -5,12 +5,13 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 
-#include "ClientState.h"
+#include "Client.h"
 #include "Packets.h"
+#include "Util.h"
 
 using std::to_string;
 
-class ClientSocket //Abstraction to
+class ClientSocket //
 {
 	SOCKET sock {};
 	sockaddr_in addr {};
@@ -32,7 +33,7 @@ public:
 	template<typename T>
 	unsigned send(T data)
 	{
-		return sendto(sock, &data, sizeof(T), 0, (sockaddr*) &addr, addrLen);
+		return ::sendto(sock, &data, sizeof(data), 0, (sockaddr*) &addr, addrLen);
 	}
 
 	unsigned recv(char* buffer, unsigned bufferLen)
@@ -46,6 +47,7 @@ void Client::loop()
 	using namespace Packets;
 
 	ClientSocket socket;
+	socket.send(ClientJoinPacket());
 
 	while (true)
 	{
@@ -63,6 +65,20 @@ void Client::loop()
 			{
 				std::cout << "Receive failed: " << e << std::endl;
 			}
+		}
+
+		bool hasCommand;
+		std::vector<std::string> args;
+		{
+			std::string msg;
+			if (hasCommand = queue.pop(msg))
+				args = splitArgs(msg);
+		}
+
+		switch (state)
+		{
+		case ClientState::Lobby:
+			break;
 		}
 	}
 }

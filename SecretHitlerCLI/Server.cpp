@@ -5,7 +5,7 @@
 
 #include <WinSock2.h>
 
-#include "ServerState.h"
+#include "Server.h"
 #include "Packets.h"
 
 using std::to_string;
@@ -50,8 +50,6 @@ void Server::loop()
 
 	u_long enabled = 1;
 	ioctlsocket(sock, FIONBIO, &enabled);
-
-
 
 	std::vector<Policy> selectionCards;
 	std::map<char, bool> electionVotes;
@@ -104,7 +102,7 @@ void Server::loop()
 		static std::vector<Player> alivePlayers;
 		switch (state)
 		{
-		case SState::Lobby:
+		case ServerState::Lobby:
 			if (hasMessage)
 			{
 				switch (message->kind)
@@ -140,11 +138,11 @@ void Server::loop()
 
 				if (players.size() >= 5 && allReady)
 				{
-					state = SState::GameStart;
+					state = ServerState::GameStart;
 				}
 			}
 			break;
-		case SState::GameStart:
+		case ServerState::GameStart:
 			//Creates and shuffles policy deck
 			cards.clear();
 			cards.insert(cards.end(), 6, Policy::Liberal); //Append 6 Lib cards
@@ -188,9 +186,9 @@ void Server::loop()
 
 			//Skip the president selection because the president has
 			// automatically been selected at the start of the game
-			state = SState::PresidentChancellorSelection;
+			state = ServerState::PresidentChancellorSelection;
 			break;
-		case SState::PresidentNaturalAdvance:
+		case ServerState::PresidentNaturalAdvance:
 			lastPresidentChair = presidentChair;
 			lastChancellorChair = chancellorChair;
 
@@ -199,9 +197,9 @@ void Server::loop()
 
 			bounce(sock, ServerNewPresidentPacket({ presidentChair }));
 
-			state = SState::PresidentChancellorSelection;
+			state = ServerState::PresidentChancellorSelection;
 			break;
-		case SState::PresidentChancellorSelection:
+		case ServerState::PresidentChancellorSelection:
 			if (hasMessage && message->kind == ClientPacketKind::ChancellorPick)
 			{
 				auto data = (ClientChancellorPickContent*) &message->content;
@@ -212,7 +210,7 @@ void Server::loop()
 					if (alivePlayers.size() > 5 || data->chancellorChair != lastPresidentChair)
 					{
 						chancellorChair = data->chancellorChair;
-						state = SState::Election;
+						state = ServerState::Election;
 
 						bounce(sock, ServerElectionRequestPacket({ chancellorChair }));
 						electionVotes.clear();
@@ -220,7 +218,7 @@ void Server::loop()
 				}
 			}
 			break;
-		case SState::Election:
+		case ServerState::Election:
 			if (hasMessage && message->kind == ClientPacketKind::ElectionVote)
 			{
 				auto data = (ClientElectionVoteContent*) &message->content;
@@ -239,7 +237,7 @@ void Server::loop()
 				{
 					if (yes > no)
 					{
-						state = SState::PresidentCardSelect;
+						state = ServerState::PresidentCardSelect;
 						ServerCardListContent cardList;
 						cardList.nCards = 3;
 
@@ -259,7 +257,7 @@ void Server::loop()
 						{
 							selectionCards.push_back(cards.front());
 							cards.erase(cards.begin());
-							state = SState::ElectionChaos;
+							state = ServerState::ElectionChaos;
 						}
 						else
 						{
@@ -269,7 +267,7 @@ void Server::loop()
 				}
 			}
 			break;
-		case SState::PresidentCardSelect:
+		case ServerState::PresidentCardSelect:
 			if (hasMessage && message->kind == ClientPacketKind::CardPick)
 			{
 				auto data = (ClientCardPickContent*) &message->content;
@@ -281,10 +279,10 @@ void Server::loop()
 					cardList.cards[i] = selectionCards[i];
 				}
 				send(sock, players[chancellorChair], ServerCardListPacket(cardList));
-				state = SState::ChancellorCardSelect;
+				state = ServerState::ChancellorCardSelect;
 			}
 			break;
-		case SState::ChancellorCardSelect:
+		case ServerState::ChancellorCardSelect:
 			if (hasMessage)
 			{
 				switch (message->kind)
@@ -293,20 +291,20 @@ void Server::loop()
 					{
 						auto data = (ClientCardPickContent*) &message->content;
 						selectionCards.erase(selectionCards.begin() + data->card);
-						state = SState::PlayCard;
+						state = ServerState::PlayCard;
 					}
 					break;
 				case ClientPacketKind::Veto:
 					if (fascistCards == 5)
 					{
 						send(sock, player[presidentChair], ServerVetoRequestPacket());
-						state = SState::PresidentVeto;
+						state = ServerState::PresidentVeto;
 					}
 					break;
 				}
 			}
 			break;
-		case SState::PresidentVeto:
+		case ServerState::PresidentVeto:
 			if (hasMessage && message->kind == ClientPacketKind::Veto)
 			{
 				auto data = (ClientVetoContent*) &message->content;
@@ -317,26 +315,26 @@ void Server::loop()
 					{
 						cards.insert(cards.begin(), selectionCards.back());
 						selectionCards.pop_back();
-						state = SState::ElectionChaos;
+						state = ServerState::ElectionChaos;
 					}
 					else
 					{
 						bounce(sock, ServerElectionChaosPacket());
-						state = SState::PresidentNaturalAdvance;
+						state = ServerState::PresidentNaturalAdvance;
 					}
 				}
 				else
 				{
 					send(sock, players[chancellorChair], ServerForcePlayRequestPacket());
-					state = SState::ChancellorCardSelect;
+					state = ServerState::ChancellorCardSelect;
 				}
 			}
 			break;
-		case SState::ElectionChaos:
+		case ServerState::ElectionChaos:
 			bounce(sock, ServerElectionChaosPacket());
-			state = SState::PlayCard;
+			state = ServerState::PlayCard;
 			break;
-		case SState::PlayCard:
+		case ServerState::PlayCard:
 			{
 				//Sends which card was played to clients
 				bounce(sock, ServerCardPlayedContent({ selectionCards[0] }));
@@ -351,7 +349,7 @@ void Server::loop()
 				{
 					//Assign the value of the winning party to variable for the Win state
 					policySideWin = win.value();
-					state = SState::Win;
+					state = ServerState::Win;
 					// TODO: Create Win state
 				}
 				else
@@ -359,20 +357,20 @@ void Server::loop()
 					switch (fascistCards)
 					{
 					case 1:
-						state = SState::PresidentPeek;
+						state = ServerState::PresidentPeek;
 						break;
 					case 2:
 						send(sock, players[presidentChair], ServerInvestigationRequestPacket());
-						state = SState::PresidentInvestigate;
+						state = ServerState::PresidentInvestigate;
 						break;
 					case 3:
 						send(sock, players[presidentChair], ServerNominateRequestPacket());
-						state = SState::PresidentNominate;
+						state = ServerState::PresidentNominate;
 						break;
 					case 4:
 					case 5:
 						send(sock, players[presidentChair], ServerKillRequestPacket());
-						state = SState::PresidentKill;
+						state = ServerState::PresidentKill;
 						break;
 					}
 				}
@@ -380,7 +378,7 @@ void Server::loop()
 				selectionCards.clear();
 			}
 			break;
-		case SState::PresidentPeek:
+		case ServerState::PresidentPeek:
 			{
 				ServerPeekedCardsPacket msg;
 				for (int i = 0; i < 3; i++)
@@ -389,9 +387,9 @@ void Server::loop()
 				}
 				send(sock, players[presidentChair], msg);
 			}
-			state = SState::PresidentNaturalAdvance;
+			state = ServerState::PresidentNaturalAdvance;
 			break;
-		case SState::PresidentInvestigate:
+		case ServerState::PresidentInvestigate:
 			if (hasMessage && message->kind == ClientPacketKind::Investigate)
 			{
 				auto data = (ClientInvestigateContent*) &message->content;
@@ -400,16 +398,16 @@ void Server::loop()
 						data->chair, players[data->chair].data.isFascist }));
 			}
 			break;
-		case SState::PresidentNominate:
+		case ServerState::PresidentNominate:
 			if (hasMessage && message->kind == ClientPacketKind::Nominate)
 			{
 				auto data = (ClientNominateContent*) &message->content;
 				presidentChair = data->chair;
 				bounce(sock, ServerNewPresidentPacket({ presidentChair }));
-				state = SState::PresidentCardSelect;
+				state = ServerState::PresidentCardSelect;
 			}
 			break;
-		case SState::PresidentKill:
+		case ServerState::PresidentKill:
 			if (hasMessage && message->kind == ClientPacketKind::Kill)
 			{
 				auto data = (ClientKillContent*) &message->content;
@@ -417,7 +415,7 @@ void Server::loop()
 				bounce(sock, ServerInformDeathPacket({ data->chair }));
 			}
 			break;
-		case SState::Win:
+		case ServerState::Win:
 			{
 				bounce(sock, ServerAnnounceWinContent({ policySideWin }));
 

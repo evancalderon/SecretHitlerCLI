@@ -10,8 +10,8 @@
 
 #include <WinSock2.h>
 
-#include "ServerState.h"
-#include "ClientState.h"
+#include "Server.h"
+#include "Client.h"
 
 using std::to_string;
 
@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		listener = std::make_unique<ClientState>();
+		listener = std::make_unique<Client>();
 	}
 
 	std::thread thread([&listener]()

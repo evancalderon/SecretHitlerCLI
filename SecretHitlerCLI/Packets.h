@@ -31,7 +31,7 @@ namespace Packets
 		ClientPacketKind kind = K;
 		T content;
 
-		ClientPacket(T content): content(content)
+		ClientPacket(T content = {}): content(content)
 		{
 		}
 	};

@@ -2,7 +2,7 @@
 
 void CommandListener::submit(std::string msg)
 {
-	q.push(msg);
+	queue.push(msg);
 }
 
 void CommandListener::loop()

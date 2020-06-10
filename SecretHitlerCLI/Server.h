@@ -7,7 +7,7 @@
 #include "GameData.h"
 #include "CommandListener.h"
 
-enum class SState
+enum class ServerState
 {
 	Lobby,
 	GameStart,
@@ -30,7 +30,7 @@ enum class SState
 
 class Server : public CommandListener
 {
-	SState state = SState::Lobby;
+	ServerState state = ServerState::Lobby;
 
 	std::vector<Policy> discard;
 	std::vector<Policy> cards;
