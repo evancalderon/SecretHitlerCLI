@@ -112,10 +112,12 @@ void Server::loop()
 						auto data = (ClientJoinContent*) &message->content;
 						Player c;
 						c.endpoint = ep;
-						c.pData.len = data->nameLen;
-						for (int i = 0; i < data->nameLen; i++)
+						c.pData.len = data->len;
+						for (int i = 0; i < data->len; i++)
 							c.pData.name[i] = data->name[i];
 						players.push_back(c);
+						std::cout << "Player joined: " <<
+							std::string(c.pData.name, c.pData.len) << std::endl;
 					}
 					break;
 				case ClientPacketKind::Ready:
@@ -124,6 +126,14 @@ void Server::loop()
 						if (player != players.end())
 						{
 							player->ready = data->state;
+							int ready = 0;
+							for (auto p : players)
+							{
+								if (p.ready)
+									ready++;
+							}
+							std::cout << ready << " out of " <<
+								players.size() << " ready." << std::endl;
 						}
 					}
 					break;
@@ -138,6 +148,7 @@ void Server::loop()
 
 				if (players.size() >= 5 && allReady)
 				{
+					bounce(sock, ServerGameStartPacket());
 					state = ServerState::GameStart;
 				}
 			}

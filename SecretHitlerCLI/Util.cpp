@@ -5,6 +5,10 @@
 std::vector<std::string> splitArgs(std::string msg)
 {
 	std::vector<std::string> args;
+
+	if (msg.empty())
+		return args;
+
 	std::string current;
 	bool qmode = false;
 	msg += " ";

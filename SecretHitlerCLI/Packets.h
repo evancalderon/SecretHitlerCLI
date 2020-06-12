@@ -4,7 +4,7 @@
 
 namespace Packets
 {
-	struct NoneContent
+	struct NoContent
 	{
 	};
 
@@ -38,7 +38,7 @@ namespace Packets
 
 	struct ClientJoinContent
 	{
-		char nameLen;
+		char len;
 		char name[32];
 	};
 
@@ -88,7 +88,7 @@ namespace Packets
 		Policy cards[3];
 	};
 
-	typedef ClientPacket<ClientPacketKind::None, NoneContent>
+	typedef ClientPacket<ClientPacketKind::None, NoContent>
 		ClientNonePacket;
 	typedef ClientPacket<ClientPacketKind::Join, ClientJoinContent>
 		ClientJoinPacket;
@@ -118,6 +118,7 @@ namespace Packets
 	enum class ServerPacketKind
 	{
 		None,
+		GameStart,
 		PlayerData,
 		NewPresident,
 		PlayerList,
@@ -169,22 +170,10 @@ namespace Packets
 		char newChancellorChair;
 	};
 
-	struct ServerElectionChaosContent
-	{
-	};
-
 	struct ServerCardListContent
 	{
 		char nCards;
 		Policy cards[3];
-	};
-
-	struct ServerVetoRequestContent
-	{
-	};
-
-	struct ServerForcePlayRequestContent
-	{
 	};
 
 	struct ServerCardPlayedContent
@@ -202,22 +191,10 @@ namespace Packets
 		Policy cards[3];
 	};
 
-	struct ServerInvestigationRequestContent
-	{
-	};
-
 	struct ServerInvestigationReportContent
 	{
 		char chair;
 		bool isFascist;
-	};
-
-	struct ServerNominateRequestContent
-	{
-	};
-
-	struct ServerKillRequestContent
-	{
 	};
 
 	struct ServerClaimContent
@@ -232,8 +209,10 @@ namespace Packets
 		char chair;
 	};
 
-	typedef ServerPacket<ServerPacketKind::None, NoneContent>
+	typedef ServerPacket<ServerPacketKind::None, NoContent>
 		ServerNonePacket;
+	typedef ServerPacket<ServerPacketKind::GameStart, NoContent>
+		ServerGameStartPacket;
 	typedef ServerPacket<ServerPacketKind::PlayerData, ServerPlayerDataContent>
 		ServerPlayerDataPacket;
 	typedef ServerPacket<ServerPacketKind::NewPresident, ServerNewPresidentContent>
@@ -242,13 +221,13 @@ namespace Packets
 		ServerPlayerListPacket;
 	typedef ServerPacket<ServerPacketKind::ElectionRequest, ServerElectionRequestContent>
 		ServerElectionRequestPacket;
-	typedef ServerPacket<ServerPacketKind::ElectionChaos, ServerElectionChaosContent>
+	typedef ServerPacket<ServerPacketKind::ElectionChaos, NoContent>
 		ServerElectionChaosPacket;
 	typedef ServerPacket<ServerPacketKind::CardList, ServerCardListContent>
 		ServerCardListPacket;
-	typedef ServerPacket<ServerPacketKind::VetoRequest, ServerVetoRequestContent>
+	typedef ServerPacket<ServerPacketKind::VetoRequest, NoContent>
 		ServerVetoRequestPacket;
-	typedef ServerPacket<ServerPacketKind::ForcePlayRequest, ServerForcePlayRequestContent>
+	typedef ServerPacket<ServerPacketKind::ForcePlayRequest, NoContent>
 		ServerForcePlayRequestPacket;
 	typedef ServerPacket<ServerPacketKind::CardPlayed, ServerCardPlayedContent>
 		ServerCardPlayedPacket;
@@ -256,13 +235,13 @@ namespace Packets
 		ServerAnnounceWinPacket;
 	typedef ServerPacket<ServerPacketKind::PeekedCards, ServerPeekedCardsContent>
 		ServerPeekedCardsPacket;
-	typedef ServerPacket<ServerPacketKind::InvestigationRequest, ServerInvestigationRequestContent>
+	typedef ServerPacket<ServerPacketKind::InvestigationRequest, NoContent>
 		ServerInvestigationRequestPacket;
 	typedef ServerPacket<ServerPacketKind::InvestigationReport, ServerInvestigationReportContent>
 		ServerInvestigationReportPacket;
-	typedef ServerPacket<ServerPacketKind::NominateRequest, ServerNominateRequestContent>
+	typedef ServerPacket<ServerPacketKind::NominateRequest, NoContent>
 		ServerNominateRequestPacket;
-	typedef ServerPacket<ServerPacketKind::KillRequest, ServerKillRequestContent>
+	typedef ServerPacket<ServerPacketKind::KillRequest, NoContent>
 		ServerKillRequestPacket;
 	typedef ServerPacket<ServerPacketKind::Claim, ServerClaimContent>
 		ServerClaimPacket;

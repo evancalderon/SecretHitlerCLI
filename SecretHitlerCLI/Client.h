@@ -8,6 +8,7 @@
 enum class ClientState
 {
 	Lobby,
+	Game,
 };
 
 class Client : public CommandListener

@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 	std::getline(std::cin, i);
 
 	std::unique_ptr<CommandListener> listener;
-	if (i[0] == 's')
+	if (i == "host")
 	{
 		listener = std::make_unique<Server>();
 	}
