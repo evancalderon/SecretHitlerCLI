@@ -171,8 +171,12 @@ void Server::loop()
 
 			for (int i = 0; i < players.size(); i++)
 			{
+				ServerPlayerDataContent content;
+				content.data.chair = i;
+				content.data.isFascist = players[i].data.isFascist;
+				content.data.isHitler = players[i].data.isHitler;
 				players[i].pData.chair = i;
-				send(sock, players[i], ServerPlayerDataPacket({ players[i].pData }));
+				send(sock, players[i], ServerPlayerDataPacket(content));
 			}
 
 			ServerPlayerListContent content;

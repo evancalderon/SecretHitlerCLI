@@ -14,7 +14,7 @@ enum class ClientState
 class Client : public CommandListener
 {
 	ClientState state = ClientState::Lobby;
-	std::optional<ClientData> data;
+	std::optional<ClientData> clientData;
 public:
 	void loop();
 };

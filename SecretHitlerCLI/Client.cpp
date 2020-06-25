@@ -99,6 +99,8 @@ void Client::loop()
 			}
 		}
 
+		PlayerData pdata;
+
 		switch (state)
 		{
 		case ClientState::Lobby:
@@ -119,6 +121,48 @@ void Client::loop()
 
 			break;
 		case ClientState::Game:
+			if (hasMessage)
+			{
+				switch (message->kind)
+				{
+				case ServerPacketKind::PlayerData:
+					{
+						auto data = (ServerPlayerDataContent*) &message->content;
+						clientData = data->data;
+						std::string role;
+						if (clientData->isHitler)
+						{
+							role = "Hitler";
+						}
+						else if (clientData->isFascist)
+						{
+							role = "Fascist";
+						}
+						else
+						{
+							role = "Liberal";
+						}
+						std::cout <<
+							"You are a " << role <<
+							" and you are at seat #" <<
+							int(clientData->chair) << "." << std::endl;
+					}
+					break;
+				case ServerPacketKind::PlayerList:
+					{
+						auto data = (ServerPlayerListContent*) &message->content;
+						std::cout << "Players: " << std::endl;
+						for (int i = 0; i < data->nPlayers; i++)
+						{
+							std::cout <<
+								std::string(
+									data->players[i].name,
+									data->players[i].len) <<
+								std::endl;
+						}
+					}
+				}
+			}
 			break;
 		}
 	}

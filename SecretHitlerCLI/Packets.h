@@ -151,7 +151,7 @@ namespace Packets
 
 	struct ServerPlayerDataContent
 	{
-		PlayerData data;
+		ClientData data;
 	};
 
 	struct ServerNewPresidentContent

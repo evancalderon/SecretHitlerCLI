@@ -17,6 +17,7 @@ struct PlayerData
 
 struct ClientData
 {
+	char chair;
 	bool isFascist;
 	bool isHitler;
 };
