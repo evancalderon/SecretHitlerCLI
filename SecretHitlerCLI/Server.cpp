@@ -258,6 +258,13 @@ void Server::loop()
 					bounce(sock, ServerElectionResultPacket({ yes > no }));
 					if (yes > no)
 					{
+						auto win = checkWin();
+						if (win)
+						{
+							policySideWin = win.value();
+							state = ServerState::Win;
+						}
+						
 						state = ServerState::PresidentCardSelect;
 						ServerCardListContent card_list {};
 						card_list.nCards = 3;
@@ -450,7 +457,7 @@ void Server::loop()
 					std::cout << "Liberals";
 				std::cout << " Win!" << std::endl;
 
-				return;
+				state = ServerState::Lobby;
 			}
 		default:
 			break;

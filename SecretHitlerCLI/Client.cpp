@@ -243,6 +243,39 @@ void Client::loop()
 					break;
 				default:
 					break;
+				case ServerPacketKind::ForcePlayRequest:
+					if (clientData->chair == chancellorChair)
+					{
+						force_play = true;
+						std::cout << "The president has denied the veto. You are required to choose a card." << std::endl;
+						state = ClientState::PickCard;
+					}
+				case ServerPacketKind::CardPlayed:
+					{
+						auto* data = (ServerCardPlayedContent*) &message->content;
+						switch (data->cardPlayed)
+						{
+						case Policy::Fascist:
+							std::cout << "A fascist card was played." << std::endl;
+							break;
+						case Policy::Liberal:
+							std::cout << "A liberal card was played." << std::endl;
+							break;
+						}
+					}
+				case ServerPacketKind::AnnounceWin:
+					{
+						auto* data = (ServerAnnounceWinContent*) &message->content;
+						switch (data->winningSide)
+						{
+						case Policy::Fascist:
+							std::cout << "The fascists have won." << std::endl;
+							break;
+						case Policy::Liberal:
+							std::cout << "The liberals have won." << std::endl;
+							break;
+						}
+					}
 				}
 			}
 			break;
