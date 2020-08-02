@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <WinSock2.h>
 
 enum class Policy
@@ -13,13 +15,15 @@ struct PlayerData
 	char len;
 	char name[30];
 	char chair;
+
+	std::string str();
 };
 
 struct ClientData
 {
 	char chair;
-	bool isFascist;
-	bool isHitler;
+	bool is_fascist;
+	bool is_hitler;
 };
 
 union Endpoint
@@ -36,7 +40,7 @@ struct Player
 {
 	Endpoint endpoint;
 	ClientData data;
-	PlayerData pData;
+	PlayerData p_data;
 	bool alive = true;
 	bool ready = false;
 

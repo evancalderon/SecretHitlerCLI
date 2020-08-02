@@ -123,6 +123,7 @@ namespace Packets
 		NewPresident,
 		PlayerList,
 		ElectionRequest,
+		ElectionResult,
 		ElectionChaos,
 		CardList,
 		VetoRequest,
@@ -168,6 +169,11 @@ namespace Packets
 	struct ServerElectionRequestContent
 	{
 		char newChancellorChair;
+	};
+
+	struct ServerElectionResultContent
+	{
+		bool success;
 	};
 
 	struct ServerCardListContent
@@ -221,6 +227,8 @@ namespace Packets
 		ServerPlayerListPacket;
 	typedef ServerPacket<ServerPacketKind::ElectionRequest, ServerElectionRequestContent>
 		ServerElectionRequestPacket;
+	typedef ServerPacket<ServerPacketKind::ElectionResult, ServerElectionResultContent>
+		ServerElectionResultPacket;
 	typedef ServerPacket<ServerPacketKind::ElectionChaos, NoContent>
 		ServerElectionChaosPacket;
 	typedef ServerPacket<ServerPacketKind::CardList, ServerCardListContent>

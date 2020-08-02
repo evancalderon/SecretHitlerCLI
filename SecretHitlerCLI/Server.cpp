@@ -32,7 +32,7 @@ void Server::loop()
 {
 	using namespace Packets;
 
-	SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	auto sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock == INVALID_SOCKET)
 	{
 		throw std::runtime_error("Socket failed: " + to_string(WSAGetLastError()));
@@ -51,17 +51,17 @@ void Server::loop()
 	u_long enabled = 1;
 	ioctlsocket(sock, FIONBIO, &enabled);
 
-	std::vector<Policy> selectionCards;
-	std::map<char, bool> electionVotes;
-	int electionChaos;
+	std::vector<Policy> selection_cards;
+	std::map<char, bool> election_votes;
+	int election_chaos;
 	while (true)
 	{
-		sockaddr_in from;
+		sockaddr_in from {};
 		int fromlen = sizeof(from);
 
-		bool hasMessage = true;
+		auto has_message = true;
 		char buffer[4096];
-		int r = recvfrom(sock, buffer, 4096, 0, (sockaddr*) &from, &fromlen);
+		auto r = recvfrom(sock, buffer, 4096, 0, (sockaddr*) &from, &fromlen);
 
 		Endpoint ep = { from.sin_addr.s_addr, from.sin_port };
 		auto player =
@@ -69,29 +69,29 @@ void Server::loop()
 				players.begin(), players.end(),
 				[&ep](Player c) { return c.endpoint.combo == ep.combo; });
 
-		auto message = (ClientNonePacket*) buffer;
+		auto* message = (ClientNonePacket*) buffer;
 
 		if (r == SOCKET_ERROR)
 		{
-			hasMessage = false;
-			int e = WSAGetLastError();
+			has_message = false;
+			auto e = WSAGetLastError();
 			if (e != WSAEWOULDBLOCK)
 			{
 				std::cout << "Receive failed: " << e << std::endl;
 			}
 		}
 
-		if (hasMessage && message->kind == ClientPacketKind::Claim)
+		if (has_message && message->kind == ClientPacketKind::Claim)
 		{
-			auto pc = player->pData.chair;
+			auto pc = player->p_data.chair;
 			if (pc == presidentChair || pc == lastPresidentChair ||
 				pc == chancellorChair || pc == lastChancellorChair)
 			{
-				auto data = (ClientClaimContent*) &message->content;
-				ServerClaimContent claim;
-				claim.chair = player->pData.chair;
+				auto* data = (ClientClaimContent*) &message->content;
+				ServerClaimContent claim {};
+				claim.chair = player->p_data.chair;
 				claim.nCards = data->nCards;
-				for (int i = 0; i < 3; i++)
+				for (auto i = 0; i < 3; i++)
 				{
 					claim.cards[i] = data->cards[i];
 				}
@@ -103,30 +103,28 @@ void Server::loop()
 		switch (state)
 		{
 		case ServerState::Lobby:
-			if (hasMessage)
+			if (has_message)
 			{
 				switch (message->kind)
 				{
 				case ClientPacketKind::Join:
 					{
-						auto data = (ClientJoinContent*) &message->content;
+						auto* data = (ClientJoinContent*) &message->content;
 						Player c;
 						c.endpoint = ep;
-						c.pData.len = data->len;
-						for (int i = 0; i < data->len; i++)
-							c.pData.name[i] = data->name[i];
+						c.p_data.len = data->len;
+						*c.p_data.name = *data->name;
 						players.push_back(c);
-						std::cout << "Player joined: " <<
-							std::string(c.pData.name, c.pData.len) << std::endl;
+						std::cout << "Player joined: " << c.p_data.str() << std::endl;
 					}
 					break;
 				case ClientPacketKind::Ready:
 					{
-						auto data = (ClientReadyContent*) &message->content;
+						auto* data = (ClientReadyContent*) &message->content;
 						if (player != players.end())
 						{
 							player->ready = data->state;
-							int ready = 0;
+							auto ready = 0;
 							for (auto p : players)
 							{
 								if (p.ready)
@@ -137,11 +135,13 @@ void Server::loop()
 						}
 					}
 					break;
+				default:
+					break;
 				}
 			}
 
 			{
-				bool allReady = true;
+				auto allReady = true;
 				for (auto p : players)
 					if (!p.ready)
 						allReady = false;
@@ -162,28 +162,28 @@ void Server::loop()
 
 			//Assign players association
 			shuffle(players);
-			players[0].data.isHitler = true;
-			for (int i = 0; i <= (players.size() - 5) / 2 + 1; i++)
+			players[0].data.is_hitler = true;
+			for (auto i = 0; i <= (players.size() - 5) / 2 + 1; i++)
 			{
-				players[i].data.isFascist = true;
+				players[i].data.is_fascist = true;
 			}
 			shuffle(players);
 
-			for (int i = 0; i < players.size(); i++)
+			for (auto i = 0; i < players.size(); i++)
 			{
-				ServerPlayerDataContent content;
+				ServerPlayerDataContent content {};
 				content.data.chair = i;
-				content.data.isFascist = players[i].data.isFascist;
-				content.data.isHitler = players[i].data.isHitler;
-				players[i].pData.chair = i;
+				content.data.is_fascist = players[i].data.is_fascist;
+				content.data.is_hitler = players[i].data.is_hitler;
+				players[i].p_data.chair = i;
 				send(sock, players[i], ServerPlayerDataPacket(content));
 			}
 
-			ServerPlayerListContent content;
+			ServerPlayerListContent content {};
 			content.nPlayers = players.size();
-			for (int i = 0; i < players.size(); i++)
+			for (auto i = 0; i < players.size(); i++)
 			{
-				content.players[i] = players[i].pData;
+				content.players[i] = players[i].p_data;
 			}
 			bounce(sock, ServerPlayerListPacket(content));
 
@@ -193,14 +193,17 @@ void Server::loop()
 			case 8:
 			case 10:
 				fascistCards++;
+			default:
+				break;
 			}
 
 			alivePlayers = players;
 
-			electionChaos = 0;
+			election_chaos = 0;
 
 			//Skip the president selection because the president has
 			// automatically been selected at the start of the game
+			bounce(sock, ServerNewPresidentPacket({ presidentChair }));
 			state = ServerState::PresidentChancellorSelection;
 			break;
 		case ServerState::PresidentNaturalAdvance:
@@ -208,18 +211,20 @@ void Server::loop()
 			lastChancellorChair = chancellorChair;
 
 			//If the proposed player is dead continue trying the next player
-			while(players[presidentChair = ++presidentChair % players.size()].alive != true);
+			while(players[presidentChair = ++presidentChair % players.size()].alive != true)
+			{
+			}
 
 			bounce(sock, ServerNewPresidentPacket({ presidentChair }));
 
 			state = ServerState::PresidentChancellorSelection;
 			break;
 		case ServerState::PresidentChancellorSelection:
-			if (hasMessage && message->kind == ClientPacketKind::ChancellorPick)
+			if (has_message && message->kind == ClientPacketKind::ChancellorPick)
 			{
-				auto data = (ClientChancellorPickContent*) &message->content;
-				if (player->pData.chair == presidentChair)
-				if (data->chancellorChair != player->pData.chair)
+				auto* data = (ClientChancellorPickContent*) &message->content;
+				if (player->p_data.chair == presidentChair)
+				if (data->chancellorChair != player->p_data.chair)
 				if (data->chancellorChair != lastChancellorChair)
 				{
 					if (alivePlayers.size() > 5 || data->chancellorChair != lastPresidentChair)
@@ -228,49 +233,50 @@ void Server::loop()
 						state = ServerState::Election;
 
 						bounce(sock, ServerElectionRequestPacket({ chancellorChair }));
-						electionVotes.clear();
+						election_votes.clear();
 					}
 				}
 			}
 			break;
 		case ServerState::Election:
-			if (hasMessage && message->kind == ClientPacketKind::ElectionVote)
+			if (has_message && message->kind == ClientPacketKind::ElectionVote)
 			{
-				auto data = (ClientElectionVoteContent*) &message->content;
-				electionVotes[player->pData.chair] = data->state;
+				auto* data = (ClientElectionVoteContent*) &message->content;
+				election_votes[player->p_data.chair] = data->state;
 			}
 
 			{
-				int yes = 0, no = 0;
-				for (auto [chair, vote] : electionVotes)
+				auto yes = 0, no = 0;
+				for (auto [chair, vote] : election_votes)
 				{
 					if (vote) yes++;
 					else no++;
 				}
 
-				if (electionVotes.size() == alivePlayers.size())
+				if (election_votes.size() == alivePlayers.size())
 				{
+					bounce(sock, ServerElectionResultPacket({ yes > no }));
 					if (yes > no)
 					{
 						state = ServerState::PresidentCardSelect;
-						ServerCardListContent cardList;
-						cardList.nCards = 3;
+						ServerCardListContent card_list {};
+						card_list.nCards = 3;
 
-						for (int i = 0; i < 3; i++)
+						for (auto i = 0; i < 3; i++)
 						{
-							selectionCards.push_back(cards.front());
+							selection_cards.push_back(cards.front());
 							cards.erase(cards.begin() + i);
 
-							cardList.cards[i] = selectionCards[i];
+							card_list.cards[i] = selection_cards[i];
 						}
 
-						send(sock, players[presidentChair], cardList);
+						send(sock, players[presidentChair], card_list);
 					}
 					else
 					{
-						if (++electionChaos == 4)
+						if (++election_chaos == 4)
 						{
-							selectionCards.push_back(cards.front());
+							selection_cards.push_back(cards.front());
 							cards.erase(cards.begin());
 							state = ServerState::ElectionChaos;
 						}
@@ -283,29 +289,29 @@ void Server::loop()
 			}
 			break;
 		case ServerState::PresidentCardSelect:
-			if (hasMessage && message->kind == ClientPacketKind::CardPick)
+			if (has_message && message->kind == ClientPacketKind::CardPick)
 			{
-				auto data = (ClientCardPickContent*) &message->content;
-				selectionCards.erase(selectionCards.begin() + data->card);
-				ServerCardListContent cardList;
-				cardList.nCards = 2;
-				for (int i = 0; i < 2; i++)
+				auto* data = (ClientCardPickContent*) &message->content;
+				selection_cards.erase(selection_cards.begin() + data->card);
+				ServerCardListContent card_list {};
+				card_list.nCards = 2;
+				for (auto i = 0; i < 2; i++)
 				{
-					cardList.cards[i] = selectionCards[i];
+					card_list.cards[i] = selection_cards[i];
 				}
-				send(sock, players[chancellorChair], ServerCardListPacket(cardList));
+				send(sock, players[chancellorChair], ServerCardListPacket(card_list));
 				state = ServerState::ChancellorCardSelect;
 			}
 			break;
 		case ServerState::ChancellorCardSelect:
-			if (hasMessage)
+			if (has_message)
 			{
 				switch (message->kind)
 				{
 				case ClientPacketKind::CardPick:
 					{
-						auto data = (ClientCardPickContent*) &message->content;
-						selectionCards.erase(selectionCards.begin() + data->card);
+						auto* data = (ClientCardPickContent*) &message->content;
+						selection_cards.erase(selection_cards.begin() + data->card);
 						state = ServerState::PlayCard;
 					}
 					break;
@@ -316,20 +322,22 @@ void Server::loop()
 						state = ServerState::PresidentVeto;
 					}
 					break;
+				default:
+					break;
 				}
 			}
 			break;
 		case ServerState::PresidentVeto:
-			if (hasMessage && message->kind == ClientPacketKind::Veto)
+			if (has_message && message->kind == ClientPacketKind::Veto)
 			{
-				auto data = (ClientVetoContent*) &message->content;
+				auto* data = (ClientVetoContent*) &message->content;
 				if (data->state)
 				{
-					electionChaos++;
-					if (electionChaos == 4)
+					election_chaos++;
+					if (election_chaos == 4)
 					{
-						cards.insert(cards.begin(), selectionCards.back());
-						selectionCards.pop_back();
+						cards.insert(cards.begin(), selection_cards.back());
+						selection_cards.pop_back();
 						state = ServerState::ElectionChaos;
 					}
 					else
@@ -352,9 +360,9 @@ void Server::loop()
 		case ServerState::PlayCard:
 			{
 				//Sends which card was played to clients
-				bounce(sock, ServerCardPlayedContent({ selectionCards[0] }));
+				bounce(sock, ServerCardPlayedContent({ selection_cards[0] }));
 
-				if (selectionCards[0] == Policy::Fascist)
+				if (selection_cards[0] == Policy::Fascist)
 					fascistCards++;
 				else
 					liberalCards++;
@@ -387,16 +395,18 @@ void Server::loop()
 						send(sock, players[presidentChair], ServerKillRequestPacket());
 						state = ServerState::PresidentKill;
 						break;
+					default:
+						break;
 					}
 				}
 
-				selectionCards.clear();
+				selection_cards.clear();
 			}
 			break;
 		case ServerState::PresidentPeek:
 			{
 				ServerPeekedCardsPacket msg;
-				for (int i = 0; i < 3; i++)
+				for (auto i = 0; i < 3; i++)
 				{
 					msg.content.cards[i] = cards[i];
 				}
@@ -405,27 +415,27 @@ void Server::loop()
 			state = ServerState::PresidentNaturalAdvance;
 			break;
 		case ServerState::PresidentInvestigate:
-			if (hasMessage && message->kind == ClientPacketKind::Investigate)
+			if (has_message && message->kind == ClientPacketKind::Investigate)
 			{
-				auto data = (ClientInvestigateContent*) &message->content;
+				auto* data = (ClientInvestigateContent*) &message->content;
 				send(sock, players[presidentChair],
 					ServerInvestigationReportPacket({
-						data->chair, players[data->chair].data.isFascist }));
+						data->chair, players[data->chair].data.is_fascist }));
 			}
 			break;
 		case ServerState::PresidentNominate:
-			if (hasMessage && message->kind == ClientPacketKind::Nominate)
+			if (has_message && message->kind == ClientPacketKind::Nominate)
 			{
-				auto data = (ClientNominateContent*) &message->content;
+				auto* data = (ClientNominateContent*) &message->content;
 				presidentChair = data->chair;
 				bounce(sock, ServerNewPresidentPacket({ presidentChair }));
 				state = ServerState::PresidentCardSelect;
 			}
 			break;
 		case ServerState::PresidentKill:
-			if (hasMessage && message->kind == ClientPacketKind::Kill)
+			if (has_message && message->kind == ClientPacketKind::Kill)
 			{
-				auto data = (ClientKillContent*) &message->content;
+				auto* data = (ClientKillContent*) &message->content;
 				players[data->chair].alive = false;
 				bounce(sock, ServerInformDeathPacket({ data->chair }));
 			}
@@ -442,6 +452,8 @@ void Server::loop()
 
 				return;
 			}
+		default:
+			break;
 		}
 	}
 }
@@ -458,7 +470,7 @@ void Server::addPlayer(Player ce)
 
 std::optional<Policy> Server::checkWin()
 {
-	if (fascistCards >= 3 && players[chancellorChair].data.isHitler || fascistCards == 6)
+	if (fascistCards >= 3 && players[chancellorChair].data.is_hitler || fascistCards == 6)
 		return std::make_optional(Policy::Fascist);
 	if (liberalCards == 5)
 		return std::make_optional(Policy::Liberal);
@@ -468,8 +480,8 @@ std::optional<Policy> Server::checkWin()
 template <typename T>
 void shuffle(std::vector<T> v)
 {
-	static std::mt19937 dev(time(0));
-	std::uniform_int_distribution rand(0, (int) v.size() - 1);
+	static std::mt19937 dev(rand());
+	const std::uniform_int_distribution rand(0, (int) v.size() - 1);
 
 	for (unsigned r = 0; r < 3; r++)
 	for (unsigned i = 0; i < v.size(); i++)
@@ -484,8 +496,8 @@ void shuffle(std::vector<T> v)
 template<typename T>
 void send(SOCKET sock, Player client, T packet)
 {
-	sockaddr_in addr = client.addr();
-	int addrLen = sizeof(addr);
+	auto addr = client.addr();
+	const int addrLen = sizeof addr;
 	sendto(sock, (char*) &packet, sizeof(T), 0, (sockaddr*) &addr, addrLen);
 }
 
